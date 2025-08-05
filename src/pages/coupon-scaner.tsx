@@ -5,9 +5,16 @@ export default function QRScannerPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [scannedUrl, setScannedUrl] = useState<string | null>(null);
   const [isTriggered, setIsTriggered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // ✅ Detect mobile device
+  useEffect(() => {
+    const isMobileDevice = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+    setIsMobile(isMobileDevice);
+  }, []);
 
   useEffect(() => {
-    if (!videoRef.current) return;
+    if (!isMobile || !videoRef.current) return;
 
     const scanner = new QrScanner(
       videoRef.current,
@@ -29,25 +36,41 @@ export default function QRScannerPage() {
     return () => {
       scanner.stop();
     };
-  }, [isTriggered]);
+  }, [isTriggered, isMobile]);
 
   const triggerAction = async (url: string) => {
     try {
-      const res = await fetch(url, { method: "POST" });
-      const text = await res.text();
-      alert(`✅ Triggered: ${url}\n\nResponse: ${text}`);
+      alert(`✅ Triggered: ${url}`);
     } catch (err) {
       alert(`❌ Failed to trigger: ${url}`);
       console.error(err);
     }
   };
 
-  return (
-    <div className="relative w-full h-screen bg-black">
-      <video ref={videoRef} className="w-full h-full " playsInline muted />
+  // ✅ fallback UI
+  if (!isMobile) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <p className="text-center text-gray-600 text-lg">
+          ❌ เปิดกล้องได้เฉพาะบนมือถือเท่านั้น
+        </p>
+      </div>
+    );
+  }
 
-      {/* Overlay UI */}
-      <div className="absolute top-0 left-0 w-full p-4 text-white z-10">
+  return (
+    <div
+      className="relative w-screen"
+      style={{ height: `${window.innerHeight}px` }} // ✅ Fix full height on mobile
+    >
+      <video
+        ref={videoRef}
+        className="absolute top-0 left-0 w-full h-full object-cover"
+        playsInline
+        muted
+      />
+
+      <div className="absolute top-0 left-0 w-full p-4 text-white z-10 bg-gradient-to-b from-black/60 to-transparent">
         <h1 className="text-xl font-semibold">📷 สแกน QR คูปอง</h1>
       </div>
 
