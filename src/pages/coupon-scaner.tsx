@@ -70,7 +70,7 @@ export default function QRScannerPage() {
         muted
       />
 
-      <div className="absolute top-0 left-0 w-full p-4 text-white z-10 bg-gradient-to-b from-black/60 to-transparent">
+      <div className="absolute top-0 left-0 w-full text-white z-10 bg-gradient-to-b from-black/60 to-transparent">
         <h1 className="text-xl font-semibold">📷 สแกน QR คูปอง</h1>
       </div>
 
