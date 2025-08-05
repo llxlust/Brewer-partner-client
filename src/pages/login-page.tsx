@@ -1,16 +1,32 @@
-import { useState, type FormEvent } from "react";
+import { useContext, useEffect, useState, type FormEvent } from "react";
+import { useAuth } from "../hooks/useAuth";
 
+import Swal from "sweetalert2";
+import { SessionContext } from "../stores/context";
+import { useNavigate } from "react-router-dom";
 export default function LoginPage() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const { partnerLogin } = useAuth();
+  const { setIsLoader } = useContext(SessionContext);
+  const navigate = useNavigate();
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // 🔒 TODO: Call your login API or logic here
-    console.log("Email:", email);
-    console.log("Password:", password);
+    setIsLoader(true);
+    const res = await partnerLogin({ email, password });
+    setIsLoader(false);
+    if (!res.success) {
+      Swal.fire({
+        icon: "error",
+        title: res.data,
+      });
+      return;
+    }
+    const token = res.data.token;
+    localStorage.setItem("partnerId", token);
+    navigate("/private/dashboard");
   };
-
+  useEffect(() => {}, []);
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <form

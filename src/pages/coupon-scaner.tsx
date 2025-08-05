@@ -1,12 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import QrScanner from "qr-scanner";
+import { useNavigate } from "react-router-dom";
+import { SessionContext } from "../stores/context";
+import Swal from "sweetalert2";
+import { useCoupon } from "../hooks/useCoupon";
 
 export default function QRScannerPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [scannedUrl, setScannedUrl] = useState<string | null>(null);
-  const [isTriggered, setIsTriggered] = useState(false);
+  const isTriggeredRef = useRef(false);
   const [isMobile, setIsMobile] = useState(false);
-
+  const { setIsLoader } = useContext(SessionContext);
+  const { redeemCoupon } = useCoupon();
   // ✅ Detect mobile device
   useEffect(() => {
     const isMobileDevice = /Mobi|Android|iPhone/i.test(navigator.userAgent);
@@ -19,10 +24,10 @@ export default function QRScannerPage() {
     const scanner = new QrScanner(
       videoRef.current,
       (result) => {
-        if (!isTriggered) {
+        if (!isTriggeredRef.current) {
+          isTriggeredRef.current = true;
           setScannedUrl(result.data);
           triggerAction(result.data);
-          setIsTriggered(true);
         }
       },
       {
@@ -32,18 +37,46 @@ export default function QRScannerPage() {
     );
 
     scanner.start();
-
     return () => {
       scanner.stop();
     };
-  }, [isTriggered, isMobile]);
+  }, [isMobile]);
 
   const triggerAction = async (url: string) => {
     try {
-      alert(`✅ Triggered: ${url}`);
+      setIsLoader(true);
+      const res = await redeemCoupon(url);
+      if (!res.success) {
+        Swal.fire({
+          icon: "error",
+          title: res.data,
+        }).then((result) => {
+          if (result.isDismissed || result.isConfirmed) {
+            isTriggeredRef.current = false;
+          }
+        });
+        return;
+      }
+      Swal.fire({
+        icon: "success",
+        title: res.data,
+        showConfirmButton: true,
+      }).then((result) => {
+        if (result.isDismissed || result.isConfirmed) {
+          isTriggeredRef.current = false;
+        }
+      });
     } catch (err) {
-      alert(`❌ Failed to trigger: ${url}`);
-      console.error(err);
+      Swal.fire({
+        icon: "error",
+        title: "Invalid Qrcode",
+      }).then((result) => {
+        if (result.isDismissed || result.isConfirmed) {
+          isTriggeredRef.current = false;
+        }
+      });
+    } finally {
+      setIsLoader(false);
     }
   };
 
@@ -60,21 +93,16 @@ export default function QRScannerPage() {
 
   return (
     <div
-      className="relative w-screen"
-      style={{ height: `${window.innerHeight}px` }} // ✅ Fix full height on mobile
+      className="relative w-full h-[100svh]"
+      // ✅ Fix full height on mobile
     >
-      <div className="absolute top-0 left-0 w-full h-full flex justify-center itmes-center">
-        <video
-          ref={videoRef}
-          className="w-full h-full object-cover"
-          playsInline
-          muted
-        />
-      </div>
-
-      <div className="absolute top-0 left-0 w-full text-white z-10 bg-gradient-to-b from-black/60 to-transparent">
-        <h1 className="text-xl font-semibold">📷 สแกน QR คูปอง</h1>
-      </div>
+      <h1 className="text-3xl pb-3">Coupon scanner</h1>
+      <video
+        ref={videoRef}
+        className="w-full aspect-square object-cover rounded-md border-1 border-gray-300"
+        playsInline
+        muted
+      />
 
       {scannedUrl && (
         <div className="absolute bottom-4 left-0 w-full text-center text-green-400 z-10">
