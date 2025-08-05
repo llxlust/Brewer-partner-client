@@ -63,12 +63,14 @@ export default function QRScannerPage() {
       className="relative w-screen"
       style={{ height: `${window.innerHeight}px` }} // ✅ Fix full height on mobile
     >
-      <video
-        ref={videoRef}
-        className="absolute top-0 left-0 w-full h-full object-cover"
-        playsInline
-        muted
-      />
+      <div className="absolute top-0 left-0 w-full h-full flex justify-center itmes-center">
+        <video
+          ref={videoRef}
+          className="w-full h-full object-cover"
+          playsInline
+          muted
+        />
+      </div>
 
       <div className="absolute top-0 left-0 w-full text-white z-10 bg-gradient-to-b from-black/60 to-transparent">
         <h1 className="text-xl font-semibold">📷 สแกน QR คูปอง</h1>
